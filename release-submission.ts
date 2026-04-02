@@ -113,15 +113,42 @@ function runGitCommand(command: string) {
   }).trim();
 }
 
-function formatTimestampForTag(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+function getNextReleaseTag() {
+  const rawTags = runGitCommand('git tag --list');
+  const tags = rawTags.length > 0 ? rawTags.split('\n') : [];
 
-  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+  const maxVersionTag = tags.reduce((max, tag) => {
+    const match = tag.match(/^v(\d+)$/);
+    if (!match) {
+      return max;
+    }
+
+    const version = Number.parseInt(match[1] ?? '0', 10);
+    return Number.isFinite(version) ? Math.max(max, version) : max;
+  }, 0);
+
+  const legacyReleaseCount = tags.filter((tag) =>
+    /^arcade-release-\d{8}-\d{6}-[a-f0-9]{7}$/.test(tag),
+  ).length;
+
+  const nextVersion = Math.max(maxVersionTag, legacyReleaseCount) + 1;
+  return `v${nextVersion}`;
+}
+
+function isReleaseTag(tag: string) {
+  return /^v\d+$/.test(tag) || /^arcade-release-\d{8}-\d{6}-[a-f0-9]{7}$/.test(tag);
+}
+
+function getCurrentReleaseState() {
+  const statusOutput = runGitCommand('git status --porcelain');
+  const headTagsOutput = runGitCommand('git tag --points-at HEAD');
+  const headTags = headTagsOutput.length > 0 ? headTagsOutput.split('\n') : [];
+  const releaseTags = headTags.filter(isReleaseTag);
+
+  return {
+    hasChanges: statusOutput.length > 0,
+    releaseTags,
+  };
 }
 
 export function getGitInfo(): GitInfo {
@@ -192,6 +219,30 @@ export async function submitArcadeRelease(
   }
 
   const eventSlug = payload.eventSlug?.trim() || DEFAULT_EVENT_SLUG;
+  let releaseState: ReturnType<typeof getCurrentReleaseState>;
+
+  try {
+    releaseState = getCurrentReleaseState();
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Failed to inspect the current git release state.',
+      step: 'validate_release_state',
+      details: error instanceof Error ? error.message : 'unknown',
+    };
+  }
+
+  if (!releaseState.hasChanges && releaseState.releaseTags.length > 0) {
+    return {
+      success: false,
+      error:
+        'The latest commit is already tagged for release and there are no new changes to submit.',
+      step: 'validate_release_state',
+      details: {
+        headReleaseTags: releaseState.releaseTags,
+      },
+    };
+  }
 
   try {
     runGitCommand('git add -A');
@@ -204,8 +255,8 @@ export async function submitArcadeRelease(
     };
   }
 
-  const timestamp = formatTimestampForTag(new Date());
-  const commitMessage = `Arcade release ${timestamp}`;
+  const tag = getNextReleaseTag();
+  const commitMessage = `Arcade release ${tag}`;
 
   try {
     runGitCommand(`git commit --allow-empty -m "${commitMessage}"`);
@@ -230,9 +281,6 @@ export async function submitArcadeRelease(
       details: error instanceof Error ? error.message : 'unknown',
     };
   }
-
-  const shortSha = commitSha.slice(0, 7);
-  const tag = `arcade-release-${timestamp}-${shortSha}`;
 
   try {
     runGitCommand(`git tag ${tag}`);

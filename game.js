@@ -42,6 +42,13 @@ const config = {
   type: Phaser.AUTO,
   width: 800,
   height: 600,
+  parent: 'game-root',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 800,
+    height: 600,
+  },
   backgroundColor: '#070b1a',
   physics: {
     default: 'arcade',
