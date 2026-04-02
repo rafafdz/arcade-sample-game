@@ -313,6 +313,7 @@
       const currentStepIndex = steps.findIndex(
         (step) => step.key === submissionState.status,
       );
+      const coverPreviewUrl = getStarterUrl('/cover.png');
 
       const handleSubmit = async () => {
         if (!canStart || submissionState.isRunning) {
@@ -389,34 +390,48 @@
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="rounded border border-white/10 bg-white/[0.03] p-4">
-                <div className="mb-3 text-xs uppercase tracking-wider text-gray-500">
-                  Release Target
+              <div className="grid gap-4 rounded border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_220px]">
+                <div>
+                  <div className="mb-3 text-xs uppercase tracking-wider text-gray-500">
+                    Release Target
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-gray-400">Challenge</span>
+                      <span className="font-medium text-white text-right">
+                        {challengeInfo?.challenge?.name || '/26 arcade releases'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-gray-400">Repository</span>
+                      <span className="font-medium text-white break-all text-right">
+                        {gitInfo?.remoteUrl || 'No git remote detected'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-gray-400">Branch</span>
+                      <span className="font-medium text-white">
+                        {gitInfo?.branch || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-gray-400">Submission Deadline</span>
+                      <span className="font-medium text-white text-right">
+                        {formatDeadline(challengeInfo?.challenge?.submissionDeadline)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">Challenge</span>
-                    <span className="font-medium text-white text-right">
-                      {challengeInfo?.challenge?.name || '/26 arcade releases'}
-                    </span>
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-wider text-gray-500">
+                    Cover Preview
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">Repository</span>
-                    <span className="font-medium text-white break-all text-right">
-                      {gitInfo?.remoteUrl || 'No git remote detected'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">Branch</span>
-                    <span className="font-medium text-white">
-                      {gitInfo?.branch || 'Unknown'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">Submission Deadline</span>
-                    <span className="font-medium text-white text-right">
-                      {formatDeadline(challengeInfo?.challenge?.submissionDeadline)}
-                    </span>
+                  <div className="overflow-hidden rounded border border-white/10 bg-black/20">
+                    <img
+                      src={coverPreviewUrl}
+                      alt="Current game cover"
+                      className="block h-auto w-full"
+                    />
                   </div>
                 </div>
               </div>
