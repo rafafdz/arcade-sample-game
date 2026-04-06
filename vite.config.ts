@@ -5,6 +5,7 @@ import { getCoverCheckResult } from './cover-check.js';
 import {
   fetchArcadeChallengeInfo,
   getArcadeChallengeSlug,
+  getArcadeSiteUrl,
   getGitInfo,
   readJsonBody,
   submitArcadeRelease,
@@ -74,6 +75,7 @@ function restrictionCheckerPlugin() {
               JSON.stringify({
                 ...challengeInfo,
                 sourceSlug: getArcadeChallengeSlug(),
+                siteUrl: getArcadeSiteUrl(),
               }),
             );
           } catch (error) {

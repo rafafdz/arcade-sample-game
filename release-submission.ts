@@ -88,6 +88,10 @@ export function getArcadeChallengeSlug() {
   return DEFAULT_EVENT_SLUG;
 }
 
+export function getArcadeSiteUrl() {
+  return DEFAULT_HACK_SITE_URL;
+}
+
 export function getArcadeChallengeInfoUrl() {
   const url = new URL('/api/26/arcade/challenge-info', DEFAULT_HACK_SITE_URL);
   url.searchParams.set('eventSlug', DEFAULT_EVENT_SLUG);

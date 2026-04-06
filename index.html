@@ -345,8 +345,18 @@
           description: 'Processing release submission.',
         };
       const coverPreviewUrl = getStarterUrl('/cover.png');
+      const releaseSiteUrl = challengeInfo?.siteUrl || 'https://hack.platan.us';
       const releaseUrl = submissionState.result
-        ? `https://hack.platan.us/26/arcade/${submissionState.result.release.slug}`
+        ? (() => {
+            try {
+              return new URL(
+                `/26/arcade/${submissionState.result.release.slug}`,
+                releaseSiteUrl,
+              ).toString();
+            } catch (_error) {
+              return `https://hack.platan.us/26/arcade/${submissionState.result.release.slug}`;
+            }
+          })()
         : null;
       const isSubmittingView = submissionState.isRunning;
       const isSuccessView = Boolean(submissionState.result);
