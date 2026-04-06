@@ -1,5 +1,5 @@
 // Platanus Hack 26: Street Fighters Turbo Remix
-// 2-Player Fighting Game
+// Test edit: comment-only change in game.js
 
 // =============================================================================
 // ARCADE BUTTON MAPPING
