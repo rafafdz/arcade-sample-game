@@ -275,8 +275,6 @@
         }
       }, [isOpen]);
 
-      if (!isOpen) return null;
-
       const canStart =
         checks?.passed &&
         gitInfo?.isGitRepo &&
@@ -296,6 +294,11 @@
           description: 'Creates a dedicated release commit, even if it is empty.',
         },
         {
+          key: 'resolve_commit',
+          title: 'Resolve commit SHA',
+          description: 'Reads the new commit SHA before tagging the release.',
+        },
+        {
           key: 'git_tag',
           title: 'Tag the release',
           description: 'Creates a unique arcade release tag from the new commit.',
@@ -310,15 +313,80 @@
           title: 'Ingest in arcade backend',
           description: 'Calls the release ingestion API with the repo and tag.',
         },
+        {
+          key: 'backend_response',
+          title: 'Process backend response',
+          description: 'Waits for the ingestion API to confirm the submitted release.',
+        },
       ];
 
+      const progressSequence = [
+        'git_add',
+        'git_commit',
+        'resolve_commit',
+        'git_tag',
+        'git_push',
+        'backend_request',
+      ];
+      const progressStepKey =
+        submissionState.isRunning &&
+        progressSequence.includes(submissionState.status)
+          ? submissionState.status
+          : submissionState.isRunning
+            ? 'backend_request'
+            : submissionState.status;
       const currentStepIndex = steps.findIndex(
-        (step) => step.key === submissionState.status,
+        (step) => step.key === progressStepKey,
       );
+      const activeStep =
+        steps[currentStepIndex] ||
+        steps[steps.length - 1] || {
+          title: 'Submitting release',
+          description: 'Processing release submission.',
+        };
       const coverPreviewUrl = getStarterUrl('/cover.png');
       const releaseUrl = submissionState.result
         ? `https://hack.platan.us/26/arcade/${submissionState.result.release.slug}`
         : null;
+      const isSubmittingView = submissionState.isRunning;
+      const isSuccessView = Boolean(submissionState.result);
+      const isErrorView =
+        !submissionState.isRunning &&
+        !submissionState.result &&
+        Boolean(submissionState.error);
+
+      useEffect(() => {
+        if (!submissionState.isRunning) {
+          return undefined;
+        }
+
+        const interval = window.setInterval(() => {
+          setSubmissionState((current) => {
+            if (!current.isRunning) {
+              return current;
+            }
+
+            const sequenceIndex = progressSequence.indexOf(current.status);
+            if (sequenceIndex === -1) {
+              return current;
+            }
+
+            const nextStatus = progressSequence[sequenceIndex + 1];
+            if (!nextStatus) {
+              return current;
+            }
+
+            return {
+              ...current,
+              status: nextStatus,
+            };
+          });
+        }, 900);
+
+        return () => window.clearInterval(interval);
+      }, [submissionState.isRunning]);
+
+      if (!isOpen) return null;
 
       const handleSubmit = async () => {
         if (!canStart || submissionState.isRunning) {
@@ -387,7 +455,7 @@
           }}
         >
           <div className="bg-[#111] border border-white/20 rounded-lg max-w-2xl w-[90%] max-h-[90vh] overflow-y-auto shadow-2xl">
-            {submissionState.result ? (
+            {isSuccessView ? (
               <>
                 <div className="p-6 pb-4 border-b border-white/10 text-center">
                   <div
@@ -468,6 +536,170 @@
                   <button
                     onClick={onClose}
                     className="w-full py-3 bg-white/5 text-gray-300 border border-white/15 rounded hover:bg-white/[0.08] hover:border-white/25 transition-all uppercase tracking-wider text-sm font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : isSubmittingView ? (
+              <>
+                <div className="p-6 pb-4 border-b border-white/10 text-center">
+                  <div
+                    className="mb-3 inline-flex rounded-full border px-3 py-1 text-[0.68rem] uppercase tracking-[0.24em]"
+                    style={{
+                      borderColor: HACK_PRIMARY_BORDER,
+                      backgroundColor: HACK_PRIMARY_BG,
+                      color: HACK_PRIMARY_TEXT,
+                    }}
+                  >
+                    Submitting Release
+                  </div>
+                  <h2 className="font-oxanium text-3xl text-white">
+                    Sending {nextReleaseTag}
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-400">
+                    Keep this modal open while the release is staged, tagged, pushed, and ingested.
+                  </p>
+                </div>
+
+                <div className="p-6">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+                    <div
+                      className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-white/10 border-t-transparent"
+                      style={{
+                        borderTopColor: HACK_PRIMARY_RGB,
+                        boxShadow: HACK_PRIMARY_SHADOW,
+                      }}
+                    />
+                    <div className="mt-5 text-xs uppercase tracking-[0.24em] text-white/45">
+                      Current Step
+                    </div>
+                    <div className="mt-2 text-xl font-medium text-white">
+                      {activeStep.title}
+                    </div>
+                    <div className="mt-2 text-sm text-gray-400">
+                      {RELEASE_STEP_LABELS[submissionState.status] || activeStep.description}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-2">
+                    {steps.map((step, index) => {
+                      const isDone = index < currentStepIndex;
+                      const isActive = index === currentStepIndex;
+
+                      return (
+                        <div
+                          key={step.key}
+                          className={`rounded border p-3 text-sm ${
+                            isActive
+                              ? ''
+                              : isDone
+                                ? ''
+                                : 'border-white/10 bg-white/[0.03]'
+                          }`}
+                          style={
+                            isActive || isDone
+                              ? {
+                                  borderColor: HACK_PRIMARY_BORDER,
+                                  backgroundColor: HACK_PRIMARY_BG,
+                                }
+                              : undefined
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{isDone ? '✓' : isActive ? '⏳' : '•'}</span>
+                            <span className="font-medium text-white">{step.title}</span>
+                          </div>
+                          <div className="mt-1 ml-6 text-xs text-gray-400">
+                            {step.description}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : isErrorView ? (
+              <>
+                <div className="p-6 pb-4 border-b border-white/10 text-center">
+                  <div className="mb-3 inline-flex rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[0.68rem] uppercase tracking-[0.24em] text-red-200">
+                    Submission Failed
+                  </div>
+                  <h2 className="font-oxanium text-3xl text-white">
+                    {nextReleaseTag} Was Not Submitted
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-400">
+                    The release flow stopped before completion. Review the failing step below and try again.
+                  </p>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div className="rounded border border-red-500/30 bg-red-500/10 p-4">
+                    <div className="text-xs uppercase tracking-wider text-red-200/80">
+                      Failed Step
+                    </div>
+                    <div className="mt-2 text-lg font-medium text-white">
+                      {RELEASE_STEP_LABELS[submissionState.status] || 'Submission failed'}
+                    </div>
+                    <div className="mt-3 text-sm text-red-100">
+                      {submissionState.error}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {steps.map((step) => {
+                      const isFailed = submissionState.status === step.key;
+
+                      return (
+                        <div
+                          key={step.key}
+                          className="rounded border border-white/10 bg-white/[0.03] p-3 text-sm"
+                          style={
+                            isFailed
+                              ? {
+                                  borderColor: 'rgba(239, 68, 68, 0.38)',
+                                  backgroundColor: 'rgba(127, 29, 29, 0.2)',
+                                }
+                              : undefined
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{isFailed ? '✕' : '•'}</span>
+                            <span className="font-medium text-white">{step.title}</span>
+                          </div>
+                          <div className="mt-1 ml-6 text-xs text-gray-400">
+                            {step.description}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="p-4 pt-0 flex flex-col gap-3">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!canStart}
+                    className={`w-full py-3 border rounded transition-all uppercase tracking-wider text-sm font-medium ${
+                      canStart
+                        ? ''
+                        : 'bg-white/5 text-gray-500 border-white/15 cursor-not-allowed'
+                    }`}
+                    style={
+                      canStart
+                        ? {
+                            backgroundColor: HACK_PRIMARY_BG,
+                            color: HACK_PRIMARY_TEXT,
+                            borderColor: HACK_PRIMARY_BORDER,
+                          }
+                        : undefined
+                    }
+                  >
+                    Retry Submission
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="w-full py-3 bg-white/5 text-gray-400 border border-white/15 rounded hover:bg-white/[0.08] hover:border-white/25 transition-all uppercase tracking-wider text-sm font-medium"
                   >
                     Close
                   </button>
@@ -559,66 +791,6 @@
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-3">Submission Steps</h3>
-                    <div className="space-y-2">
-                      {steps.map((step, index) => {
-                        const isDone =
-                          submissionState.status === 'success' ||
-                          (currentStepIndex !== -1 && index < currentStepIndex);
-                        const isActive =
-                          submissionState.isRunning &&
-                          (submissionState.status === step.key ||
-                            (submissionState.status === 'backend_response' &&
-                              step.key === 'backend_request'));
-
-                        return (
-                          <div
-                            key={step.key}
-                            className={`rounded border p-3 text-sm ${
-                              isActive
-                                ? ''
-                                : isDone
-                                  ? ''
-                                  : 'border-white/10 bg-white/[0.03]'
-                            }`}
-                            style={
-                              isActive || isDone
-                                ? {
-                                    borderColor: HACK_PRIMARY_BORDER,
-                                    backgroundColor: HACK_PRIMARY_BG,
-                                  }
-                                : undefined
-                            }
-                          >
-                            <div className="flex items-center gap-2">
-                              <span>
-                                {isDone ? '✅' : isActive ? '⏳' : '•'}
-                              </span>
-                              <span className="font-medium text-white">{step.title}</span>
-                            </div>
-                            <div className="mt-1 ml-6 text-xs text-gray-400">
-                              {step.description}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="rounded border border-white/10 bg-white/[0.03] p-4">
-                    <div className="text-xs uppercase tracking-wider text-gray-500 mb-2">
-                      Status
-                    </div>
-                    <div className="text-sm text-white">
-                      {RELEASE_STEP_LABELS[submissionState.status] || 'Ready'}
-                    </div>
-                    {submissionState.error && (
-                      <div className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-                        {submissionState.error}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 <div className="p-4 pt-0 flex flex-col gap-3">
