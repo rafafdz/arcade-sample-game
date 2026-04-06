@@ -1,5 +1,5 @@
 // Platanus Hack 26: Street Fighters Turbo Remix
-// Test edit: comment-only change in game.js
+// Test edit: updated comment to verify submit gating
 
 // =============================================================================
 // ARCADE BUTTON MAPPING
