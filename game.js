@@ -290,7 +290,6 @@ function create() {
     keys[key] = false;
   });
 
-  playTone(this, 440, 0.2);
 }
 
 function update(_time, delta) {
@@ -767,7 +766,11 @@ function restartRound(scene) {
 }
 
 function playTone(scene, frequency, duration) {
-  const audioContext = scene.sound.context;
+  const audioContext = scene.sound?.context;
+  if (!audioContext || audioContext.state !== 'running') {
+    return;
+  }
+
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
 
