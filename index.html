@@ -190,6 +190,38 @@
       }
     }
 
+    async function copyTextToClipboard(value) {
+      if (!value) {
+        return false;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(value);
+          return true;
+        } catch (_error) {
+          // Fall through to the legacy copy path.
+        }
+      }
+
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = value;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.pointerEvents = 'none';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const didCopy = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return didCopy;
+      } catch (_error) {
+        return false;
+      }
+    }
+
     function dispatchGameKeyState(key, pressed) {
       const iframe = document.getElementById('game-frame');
       const iframeWindow = iframe?.contentWindow;
@@ -265,6 +297,7 @@
         result: null,
       });
       const [shareComposer, setShareComposer] = useState(null);
+      const [shareNotice, setShareNotice] = useState(null);
 
       useEffect(() => {
         if (!isOpen) {
@@ -275,6 +308,7 @@
             result: null,
           });
           setShareComposer(null);
+          setShareNotice(null);
         }
       }, [isOpen]);
 
@@ -464,6 +498,7 @@
 
       const handleOpenShareComposer = (platform) => {
         setShareComposer(platform);
+        setShareNotice(null);
       };
 
       const handlePublishShare = async () => {
@@ -477,12 +512,16 @@
           shareTarget = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
             shareMessage,
           )}&url=${encodeURIComponent(releaseUrl)}`;
+          setShareNotice(null);
         } else {
-          try {
-            await navigator.clipboard.writeText(`${shareMessage}\n\n${releaseUrl}`);
-          } catch (_error) {
-            // Ignore clipboard failures and still open the share target.
-          }
+          const didCopy = await copyTextToClipboard(
+            `${shareMessage}\n\n${releaseUrl}`,
+          );
+          setShareNotice(
+            didCopy
+              ? 'LinkedIn does not support prefilled post text here. The message was copied to your clipboard so you can paste it into the share dialog.'
+              : 'LinkedIn does not support prefilled post text here. Copy the prepared message from this preview and paste it into the share dialog.',
+          );
 
           shareTarget = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
             releaseUrl,
@@ -606,7 +645,7 @@
                           <div className="mt-1 text-sm text-white">
                             {shareComposer === 'x'
                               ? 'Preview your post before opening X.'
-                              : 'Preview your post before opening LinkedIn.'}
+                              : 'Preview your post before opening LinkedIn. The link preview will transfer automatically, but the text must be pasted manually.'}
                           </div>
                         </div>
                         <button
@@ -661,6 +700,12 @@
                           </div>
                         </div>
                       </div>
+
+                      {shareComposer === 'linkedin' && shareNotice && (
+                        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+                          {shareNotice}
+                        </div>
+                      )}
 
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                         <button
