@@ -252,6 +252,7 @@
     function SubmissionModal({
       isOpen,
       onClose,
+      metadata,
       checks,
       gitInfo,
       coverCheck,
@@ -263,6 +264,7 @@
         error: null,
         result: null,
       });
+      const [shareComposer, setShareComposer] = useState(null);
 
       useEffect(() => {
         if (!isOpen) {
@@ -272,6 +274,7 @@
             error: null,
             result: null,
           });
+          setShareComposer(null);
         }
       }, [isOpen]);
 
@@ -358,6 +361,10 @@
             }
           })()
         : null;
+      const gameName = metadata?.game_name || 'Your game';
+      const shareMessage = submissionState.result
+        ? `${gameName} ${submissionState.result.tag} is live in Platanus Hack 26 Arcade. Play it, share it, and send some votes my way.`
+        : '';
       const isSubmittingView = submissionState.isRunning;
       const isSuccessView = Boolean(submissionState.result);
       const isErrorView =
@@ -455,6 +462,36 @@
         }
       };
 
+      const handleOpenShareComposer = (platform) => {
+        setShareComposer(platform);
+      };
+
+      const handlePublishShare = async () => {
+        if (!shareComposer || !releaseUrl) {
+          return;
+        }
+
+        let shareTarget = '';
+
+        if (shareComposer === 'x') {
+          shareTarget = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+            shareMessage,
+          )}&url=${encodeURIComponent(releaseUrl)}`;
+        } else {
+          try {
+            await navigator.clipboard.writeText(`${shareMessage}\n\n${releaseUrl}`);
+          } catch (_error) {
+            // Ignore clipboard failures and still open the share target.
+          }
+
+          shareTarget = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+            releaseUrl,
+          )}`;
+        }
+
+        window.open(shareTarget, '_blank', 'noopener,noreferrer');
+      };
+
       return (
         <div 
           className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center"
@@ -481,6 +518,9 @@
                   <h2 className="font-oxanium text-3xl text-white">
                     {submissionState.result.tag} Submitted!
                   </h2>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-400">
+                    {metadata?.game_name || 'Your game'} {submissionState.result.tag} has been submitted. After the deadline, your game will be reviewed and if selected as a winner, you will be contacted as a winner. In the meantime, publish your game in social media and get votes to participate to the most popular game prize.
+                  </p>
                 </div>
 
                 <div className="p-6">
@@ -540,6 +580,109 @@
                       </div>
                     </div>
                   </a>
+
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      onClick={() => handleOpenShareComposer('x')}
+                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                    >
+                      Share On X
+                    </button>
+                    <button
+                      onClick={() => handleOpenShareComposer('linkedin')}
+                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                    >
+                      Share On LinkedIn
+                    </button>
+                  </div>
+
+                  {shareComposer && (
+                    <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-xs uppercase tracking-[0.22em] text-white/45">
+                            {shareComposer === 'x' ? 'X Composer' : 'LinkedIn Composer'}
+                          </div>
+                          <div className="mt-1 text-sm text-white">
+                            {shareComposer === 'x'
+                              ? 'Preview your post before opening X.'
+                              : 'Preview your post before opening LinkedIn.'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setShareComposer(null)}
+                          className="rounded-full border border-white/10 px-3 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-white/65 transition-colors hover:border-white/20 hover:text-white"
+                        >
+                          Close
+                        </button>
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold"
+                            style={{
+                              borderColor: HACK_PRIMARY_BORDER,
+                              backgroundColor: HACK_PRIMARY_BG,
+                              color: HACK_PRIMARY_TEXT,
+                            }}
+                          >
+                            {gameName.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {gameName}
+                            </div>
+                            <div className="text-xs text-white/45">
+                              {shareComposer === 'x' ? '@arcade-release' : 'Arcade release'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                          {shareMessage}
+                          {'\n\n'}
+                          {releaseUrl}
+                        </div>
+
+                        <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+                          <img
+                            src={coverPreviewUrl}
+                            alt={`${gameName} cover preview`}
+                            className="block h-auto w-full"
+                          />
+                          <div className="border-t border-white/10 p-3">
+                            <div className="text-sm font-medium text-white">
+                              {gameName} {submissionState.result.tag}
+                            </div>
+                            <div className="mt-1 text-xs text-white/45">
+                              {releaseUrl.replace(/^https?:\/\//, '')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                        <button
+                          onClick={handlePublishShare}
+                          className="flex-1 rounded-xl border px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] transition-all"
+                          style={{
+                            backgroundColor: HACK_PRIMARY_BG,
+                            color: HACK_PRIMARY_TEXT,
+                            borderColor: HACK_PRIMARY_BORDER,
+                          }}
+                        >
+                          Publish
+                        </button>
+                        <button
+                          onClick={() => setShareComposer(null)}
+                          className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 pt-0">
@@ -1481,6 +1624,7 @@
           <SubmissionModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
+            metadata={metadata}
             checks={checks}
             gitInfo={gitInfo}
             coverCheck={coverCheck}
