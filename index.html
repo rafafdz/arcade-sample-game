@@ -1100,6 +1100,7 @@
         loadLocalData();
         if (
           !cachedChallengeInfo ||
+          !cachedChallengeInfo.data?.siteUrl ||
           Date.now() - cachedChallengeInfo.cachedAt >=
             CHALLENGE_INFO_REFRESH_MS
         ) {
