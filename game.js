@@ -1,4 +1,4 @@
-// Platanus Hack 26: Street Fighters Turbo
+// Platanus Hack 26: Street Fighters Turbo Remix
 // 2-Player Fighting Game
 
 // =============================================================================
