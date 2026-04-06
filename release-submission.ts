@@ -19,6 +19,11 @@ export type GitInfo = {
   repoName: string | null;
   branch: string | null;
   isGitRepo: boolean;
+  hasUncommittedChanges: boolean;
+  headReleaseTags: string[];
+  latestReleaseTag: string | null;
+  nextReleaseTag: string | null;
+  canSubmitRelease: boolean;
   error?: string;
 };
 
@@ -113,28 +118,6 @@ function runGitCommand(command: string) {
   }).trim();
 }
 
-function getNextReleaseTag() {
-  const rawTags = runGitCommand('git tag --list');
-  const tags = rawTags.length > 0 ? rawTags.split('\n') : [];
-
-  const maxVersionTag = tags.reduce((max, tag) => {
-    const match = tag.match(/^v(\d+)$/);
-    if (!match) {
-      return max;
-    }
-
-    const version = Number.parseInt(match[1] ?? '0', 10);
-    return Number.isFinite(version) ? Math.max(max, version) : max;
-  }, 0);
-
-  const legacyReleaseCount = tags.filter((tag) =>
-    /^arcade-release-\d{8}-\d{6}-[a-f0-9]{7}$/.test(tag),
-  ).length;
-
-  const nextVersion = Math.max(maxVersionTag, legacyReleaseCount) + 1;
-  return `v${nextVersion}`;
-}
-
 function isReleaseTag(tag: string) {
   return /^v\d+$/.test(tag) || /^arcade-release-\d{8}-\d{6}-[a-f0-9]{7}$/.test(tag);
 }
@@ -151,12 +134,45 @@ function getCurrentReleaseState() {
   };
 }
 
+function getLatestVersionTagOnHeadHistory() {
+  try {
+    const latestTag = runGitCommand(
+      "git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD",
+    );
+    return latestTag.length > 0 ? latestTag : null;
+  } catch {
+    return null;
+  }
+}
+
+function getNextReleaseTag() {
+  const latestTag = getLatestVersionTagOnHeadHistory();
+  if (!latestTag) {
+    return 'v1';
+  }
+
+  const match = latestTag.match(/^v(\d+)$/);
+  if (!match) {
+    return 'v1';
+  }
+
+  const latestVersion = Number.parseInt(match[1] ?? '0', 10);
+  if (!Number.isFinite(latestVersion)) {
+    return 'v1';
+  }
+
+  return `v${latestVersion + 1}`;
+}
+
 export function getGitInfo(): GitInfo {
   try {
     const remoteUrl = runGitCommand('git config --get remote.origin.url');
     const username = runGitCommand('git config user.name');
     const email = runGitCommand('git config user.email');
     const branch = runGitCommand('git rev-parse --abbrev-ref HEAD');
+    const releaseState = getCurrentReleaseState();
+    const latestReleaseTag = getLatestVersionTagOnHeadHistory();
+    const nextReleaseTag = getNextReleaseTag();
     const parsedRepo = parseGitHubRepo(remoteUrl);
 
     return {
@@ -167,6 +183,12 @@ export function getGitInfo(): GitInfo {
       repoName: parsedRepo.repoName,
       branch,
       isGitRepo: true,
+      hasUncommittedChanges: releaseState.hasChanges,
+      headReleaseTags: releaseState.releaseTags,
+      latestReleaseTag,
+      nextReleaseTag,
+      canSubmitRelease:
+        releaseState.hasChanges || releaseState.releaseTags.length === 0,
     };
   } catch (_error) {
     return {
@@ -177,6 +199,11 @@ export function getGitInfo(): GitInfo {
       repoName: null,
       branch: null,
       isGitRepo: false,
+      hasUncommittedChanges: false,
+      headReleaseTags: [],
+      latestReleaseTag: null,
+      nextReleaseTag: null,
+      canSubmitRelease: false,
       error: 'Not a git repository or git not configured',
     };
   }

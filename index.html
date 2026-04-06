@@ -280,7 +280,9 @@
       const canStart =
         checks?.passed &&
         gitInfo?.isGitRepo &&
-        coverCheck?.isValid;
+        coverCheck?.isValid &&
+        gitInfo?.canSubmitRelease;
+      const nextReleaseTag = gitInfo?.nextReleaseTag || 'v1';
 
       const steps = [
         {
@@ -318,7 +320,7 @@
       const handleSubmit = async () => {
         if (!canStart || submissionState.isRunning) {
           if (!canStart) {
-            alert('Please make sure all checks pass, you have a valid custom 800x600 PNG cover that is 500 KB or less, and a valid Git repository configured.');
+            alert('Please make sure all checks pass, you have a valid custom 800x600 PNG cover that is 500 KB or less, you have a valid Git repository configured, and either there are uncommitted changes or the latest commit is not already release-tagged.');
           }
           return;
         }
@@ -454,6 +456,15 @@
                     <span className="flex-1 text-gray-300">Git Repository</span>
                     <span className="font-medium">{gitInfo?.isGitRepo ? 'Ready' : 'Missing'}</span>
                   </div>
+                  <div className="flex items-center bg-white/[0.03] rounded p-2 text-sm">
+                    <span className="text-base mr-2">{gitInfo?.canSubmitRelease ? '✅' : '❌'}</span>
+                    <span className="flex-1 text-gray-300">Release State</span>
+                    <span className="font-medium">
+                      {gitInfo?.canSubmitRelease
+                        ? `Will submit ${nextReleaseTag}`
+                        : 'No new release to submit'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -556,7 +567,9 @@
                     : undefined
                 }
               >
-                {submissionState.isRunning ? 'Submitting Release...' : 'Submit Release'}
+                {submissionState.isRunning
+                  ? `Submitting ${nextReleaseTag}...`
+                  : `Submit Release ${nextReleaseTag}`}
               </button>
               <button
                 onClick={onClose}
@@ -955,7 +968,14 @@
 
       const isPlaceholder = metadata.game_name?.includes('<') || metadata.description?.includes('<');
       const isDeadlinePassed = challengeInfo?.windows?.submissionClosed === true;
-      const canSubmit = !isPlaceholder && checks?.passed && coverCheck?.isValid && !isDeadlinePassed;
+      const nextReleaseTag = gitInfo?.nextReleaseTag || 'v1';
+      const canSubmit =
+        !isPlaceholder &&
+        checks?.passed &&
+        coverCheck?.isValid &&
+        gitInfo?.isGitRepo &&
+        gitInfo?.canSubmitRelease &&
+        !isDeadlinePassed;
       const isTwoPlayer = metadata?.player_mode === 'two_player';
       const playerModeLabel = isTwoPlayer ? '2 Players' : '1 Player';
 
@@ -996,6 +1016,16 @@
               {coverCheck && !coverCheck.isValid && (
                 <div className="mt-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[0.7rem] text-red-400">
                   ⚠️ {coverCheck.message}
+                </div>
+              )}
+              {gitInfo?.isGitRepo === false && (
+                <div className="mt-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[0.7rem] text-red-400">
+                  ⚠️ Valid Git repository required
+                </div>
+              )}
+              {gitInfo?.isGitRepo && !gitInfo?.canSubmitRelease && (
+                <div className="mt-2 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[0.7rem] text-amber-300">
+                  ⚠️ No uncommitted changes and the latest commit is already tagged for release
                 </div>
               )}
             </div>
@@ -1093,7 +1123,7 @@
                     : undefined
                 }
               >
-                🚀 Submit
+                🚀 Submit {nextReleaseTag}
               </button>
             </div>
           </div>
