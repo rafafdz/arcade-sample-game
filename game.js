@@ -1,4 +1,4 @@
-// Platanus Hack 26 Arcade Starter Example
+// Platanus Hack 26 — Buenos Aires Edition
 // Two-player brick duel with score persistence through the arcade storage bridge.
 
 const GAME_WIDTH = 800;
