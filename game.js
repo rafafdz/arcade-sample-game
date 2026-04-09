@@ -620,17 +620,9 @@ function createStartScreen(scene) {
   c.add(titleMain);
   scene.tweens.add({
     targets: titleMain,
-    scaleX: 1.06,
-    scaleY: 1.12,
-    duration: 780,
-    yoyo: true,
-    repeat: -1,
-    ease: 'Sine.easeInOut',
-  });
-  scene.tweens.add({
-    targets: titleMain,
-    y: 154,
-    duration: 1600,
+    scale: 1.025,
+    alpha: 0.88,
+    duration: 1100,
     yoyo: true,
     repeat: -1,
     ease: 'Sine.easeInOut',
