@@ -1,5 +1,5 @@
 // Platanus Hack 26 — Buenos Aires Edition
-// Two-player brick duel with score persistence through the arcade storage bridge.
+// Two-player brick duel. Dash with Button 1, break the word, keep your paddle alive.
 
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
@@ -132,19 +132,20 @@ function create() {
   createControlsScreen(scene);
   createPauseScreen(scene);
   createControls(scene);
+  showStartScreen(scene);
 
   loadHighScores()
     .then((highScores) => {
       scene.state.highScores = highScores;
       scene.state.saveStatus = 'Finish a duel to save a score.';
       refreshLeaderboard(scene);
-      showStartScreen(scene);
+      refreshStartScreenLeaderboard(scene);
     })
     .catch(() => {
       scene.state.highScores = [];
       scene.state.saveStatus = 'Storage unavailable. Match runs without saves.';
       refreshLeaderboard(scene);
-      showStartScreen(scene);
+      refreshStartScreenLeaderboard(scene);
     });
 }
 
