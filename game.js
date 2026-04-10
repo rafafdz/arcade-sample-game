@@ -33,26 +33,26 @@ const LETTER_GRID = [
 ];
 
 const CABINET_KEYS = {
-  P1U: 'w',
-  P1D: 's',
-  P1L: 'a',
-  P1R: 'd',
-  P1A: 'u',
-  P1B: 'i',
-  P1C: 'o',
-  P1X: 'j',
-  P1Y: 'k',
-  P1Z: 'l',
-  P2U: 'ArrowUp',
-  P2D: 'ArrowDown',
-  P2L: 'ArrowLeft',
-  P2R: 'ArrowRight',
-  P2A: 'r',
-  P2B: 't',
-  P2C: 'y',
-  P2X: 'f',
-  P2Y: 'g',
-  P2Z: 'h',
+  P1_U: 'w',
+  P1_D: 's',
+  P1_L: 'a',
+  P1_R: 'd',
+  P1_1: 'u',
+  P1_2: 'i',
+  P1_3: 'o',
+  P1_4: 'j',
+  P1_5: 'k',
+  P1_6: 'l',
+  P2_U: 'ArrowUp',
+  P2_D: 'ArrowDown',
+  P2_L: 'ArrowLeft',
+  P2_R: 'ArrowRight',
+  P2_1: 'r',
+  P2_2: 't',
+  P2_3: 'y',
+  P2_4: 'f',
+  P2_5: 'g',
+  P2_6: 'h',
   START1: 'Enter',
   COIN1: '1',
   START2: '2',
@@ -163,7 +163,7 @@ function update(time, delta) {
   }
 
   if (phase === 'leaderboard') {
-    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1B', 'P2B'])) {
+    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1_2', 'P2_2'])) {
       scene.leaderScreen.container.setVisible(false);
       showStartScreen(scene);
     }
@@ -171,7 +171,7 @@ function update(time, delta) {
   }
 
   if (phase === 'controls') {
-    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1B', 'P2B'])) {
+    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1_2', 'P2_2'])) {
       scene.controlsScreen.container.setVisible(false);
       showStartScreen(scene);
     }
@@ -202,7 +202,7 @@ function update(time, delta) {
   }
 
   if (phase === 'saved') {
-    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1B', 'P2B'])) {
+    if (consumeAnyPressedControl(scene, ['START1', 'START2', 'P1_2', 'P2_2'])) {
       returnToStart(scene);
     }
   }
@@ -729,10 +729,10 @@ function createControlsScreen(scene) {
 
   const lines = [
     'P1   MOVE  A / D',
-    'P1   DASH  I',
+    'P1   DASH  U',
     '',
     'P2   MOVE  ← / →',
-    'P2   DASH  T',
+    'P2   DASH  R',
     '',
     'PAUSE      ENTER',
   ];
@@ -809,7 +809,7 @@ function handleStartMenu(scene, time) {
     menu.lastAxis = axisY;
   }
 
-  if (consumeAnyPressedControl(scene, ['P1B', 'P2B', 'START1', 'START2'])) {
+  if (consumeAnyPressedControl(scene, ['P1_2', 'P2_2', 'START1', 'START2'])) {
     playSound(scene, 'select');
     startAmbientMusic(scene);
     if (menu.cursor === 0) {
@@ -1030,15 +1030,15 @@ function updatePaddles(scene, delta, time) {
   const deltaSeconds = delta / 1000;
 
   let p1Dir = 0;
-  if (isControlHeld(scene, 'P1L')) p1Dir -= 1;
-  if (isControlHeld(scene, 'P1R')) p1Dir += 1;
+  if (isControlHeld(scene, 'P1_L')) p1Dir -= 1;
+  if (isControlHeld(scene, 'P1_R')) p1Dir += 1;
 
   let p2Dir = 0;
-  if (isControlHeld(scene, 'P2L')) p2Dir -= 1;
-  if (isControlHeld(scene, 'P2R')) p2Dir += 1;
+  if (isControlHeld(scene, 'P2_L')) p2Dir -= 1;
+  if (isControlHeld(scene, 'P2_R')) p2Dir += 1;
 
-  tryStartDash(scene, 'p1', 'P1B', p1Dir, time, dashDuration, dashCooldown);
-  tryStartDash(scene, 'p2', 'P2B', p2Dir, time, dashDuration, dashCooldown);
+  tryStartDash(scene, 'p1', 'P1_1', p1Dir, time, dashDuration, dashCooldown);
+  tryStartDash(scene, 'p2', 'P2_1', p2Dir, time, dashDuration, dashCooldown);
 
   let p1Velocity = p1Dir * paddleSpeed;
   let p2Velocity = p2Dir * paddleSpeed;
@@ -1551,7 +1551,7 @@ function handleNameEntry(scene, time) {
 
   if (
     time >= entry.confirmCooldownUntil &&
-    consumeAnyPressedControl(scene, ['P1B', 'P2B', 'START1', 'START2'])
+    consumeAnyPressedControl(scene, ['P1_2', 'P2_2', 'START1', 'START2'])
   ) {
     entry.confirmCooldownUntil = time + 180;
     playSound(scene, 'select');
@@ -1561,10 +1561,10 @@ function handleNameEntry(scene, time) {
 
 function getHorizontalMenuAxis(controls) {
   let axis = 0;
-  if (controls.held.P1L || controls.held.P2L) {
+  if (controls.held.P1_L || controls.held.P2_L) {
     axis -= 1;
   }
-  if (controls.held.P1R || controls.held.P2R) {
+  if (controls.held.P1_R || controls.held.P2_R) {
     axis += 1;
   }
   return Phaser.Math.Clamp(axis, -1, 1);
@@ -1572,10 +1572,10 @@ function getHorizontalMenuAxis(controls) {
 
 function getVerticalMenuAxis(controls) {
   let axis = 0;
-  if (controls.held.P1U || controls.held.P2U) {
+  if (controls.held.P1_U || controls.held.P2_U) {
     axis -= 1;
   }
-  if (controls.held.P1D || controls.held.P2D) {
+  if (controls.held.P1_D || controls.held.P2_D) {
     axis += 1;
   }
   return Phaser.Math.Clamp(axis, -1, 1);
@@ -1756,27 +1756,39 @@ function isHighScoreEntry(value) {
   );
 }
 
+function getStorage() {
+  if (window.platanusArcadeStorage) {
+    return window.platanusArcadeStorage;
+  }
+
+  return {
+    async get(key) {
+      try {
+        const raw = window.localStorage.getItem(key);
+        return raw === null
+          ? { found: false, value: null }
+          : { found: true, value: JSON.parse(raw) };
+      } catch {
+        return { found: false, value: null };
+      }
+    },
+    async set(key, value) {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    },
+    async remove(key) {
+      window.localStorage.removeItem(key);
+    },
+  };
+}
+
 async function storageGet(key) {
-  if (window.platanusArcadeStorage && typeof window.platanusArcadeStorage.get === 'function') {
-    return window.platanusArcadeStorage.get(key);
-  }
-
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (raw === null) {
-      return { found: false, value: null };
-    }
-
-    return { found: true, value: JSON.parse(raw) };
-  } catch {
-    return { found: false, value: null };
-  }
+  return getStorage().get(key);
 }
 
 async function storageSet(key, value) {
-  if (window.platanusArcadeStorage && typeof window.platanusArcadeStorage.set === 'function') {
-    return window.platanusArcadeStorage.set(key, value);
-  }
+  return getStorage().set(key, value);
+}
 
-  window.localStorage.setItem(key, JSON.stringify(value));
+async function storageRemove(key) {
+  return getStorage().remove(key);
 }

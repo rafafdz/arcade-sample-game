@@ -35,8 +35,8 @@ Create an engaging, fun arcade game in **game.js** using **Phaser 3** (v3.87.0) 
 1. **Edit game.js**: Write your game code in this single file
 2. **Update metadata.json**: Set `game_name` and `description`
 3. **Create cover.png**: Design an 800x600 pixel cover image for your game
-4. **Check restrictions**: Run `pnpm check-restrictions` frequently
-5. **DO NOT start dev servers**: The user will handle running `pnpm dev` - do not run it yourself
+4. **Check restrictions**: Run `npm run check-restrictions` frequently
+5. **DO NOT start dev servers**: The user will handle running `npm run dev` - do not run it yourself
 
 ## Phaser 3 Resources
 
@@ -49,13 +49,13 @@ Create an engaging, fun arcade game in **game.js** using **Phaser 3** (v3.87.0) 
 - Avoid large data structures or arrays
 - Generate graphics procedurally instead of embedding images
 - Keep game logic simple and efficient
-- Test size early and often with `pnpm check-restrictions`
+- Test size early and often with `npm run check-restrictions`
 
 ## Validation
 
 Always validate your work:
 ```bash
-pnpm check-restrictions
+npm run check-restrictions
 ```
 
 This checks:
@@ -105,6 +105,7 @@ function update() {
 - Test in the development server to ensure sandbox compatibility
 - Keep code readable - minification happens automatically
 - **Controls**: Keep controls simple (arrow keys, WASD, spacebar, etc.) - they will be mapped to an arcade controller
+- **Storage**: Use `window.platanusArcadeStorage` for persistence (get/set/remove). Storage persists across releases, so always validate data read from storage before using it — the format may have changed between versions
 
 ## Best Practices
 
@@ -112,6 +113,6 @@ function update() {
 2. **Check size frequently**: Don't wait until the end
 3. **Use Phaser features**: Leverage built-in physics, tweens, and effects
 4. **Generate assets**: Draw shapes instead of using images when possible
-5. **Let the user test**: The user will run `pnpm dev` when they want to test - focus on building the game
+5. **Let the user test**: The user will run `npm run dev` when they want to test - focus on building the game
 
 Good luck building an amazing arcade game! <�

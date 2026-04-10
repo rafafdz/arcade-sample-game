@@ -52,20 +52,20 @@ Your game will run on a real arcade cabinet with physical joysticks and buttons!
 The arcade cabinet sends specific key codes when buttons are pressed:
 
 **Player 1:**
-- **Joystick**: `P1U`, `P1D`, `P1L`, `P1R` (Up, Down, Left, Right)
-- **Joystick Diagonals**: `P1DL`, `P1DR` (Down-Left, Down-Right)
-- **Action Buttons**: `P1A`, `P1B`, `P1C` (top row) / `P1X`, `P1Y`, `P1Z` (bottom row)
+- **Joystick**: `P1_U`, `P1_D`, `P1_L`, `P1_R` (Up, Down, Left, Right)
+- **Action Buttons**: `P1_1`, `P1_2`, `P1_3` (top row) / `P1_4`, `P1_5`, `P1_6` (bottom row)
 - **Start**: `START1`
+- **Coin** (machine-only, not exposed to games): `COIN1`
 
 **Player 2:**
-- **Joystick**: `P2U`, `P2D`, `P2L`, `P2R`
-- **Joystick Diagonals**: `P2DL`, `P2DR`
-- **Action Buttons**: `P2A`, `P2B`, `P2C` / `P2X`, `P2Y`, `P2Z`
+- **Joystick**: `P2_U`, `P2_D`, `P2_L`, `P2_R`
+- **Action Buttons**: `P2_1`, `P2_2`, `P2_3` / `P2_4`, `P2_5`, `P2_6`
 - **Start**: `START2`
+- **Coin** (machine-only, not exposed to games): `COIN2`
 
 ## Testing Locally
 
-For local testing, you can map these arcade buttons to keyboard keys. The mapping supports **multiple keyboard keys per arcade button** (useful for alternatives like WASD + Arrow Keys). See `game.js` for the complete `ARCADE_CONTROLS` mapping template.
+For local testing, you can map these arcade buttons to keyboard keys. The mapping supports **multiple keyboard keys per arcade button** (useful for alternatives like WASD + Arrow Keys). See `game.js` for the complete `CABINET_KEYS` mapping template.
 
 By default:
 - Player 1 uses **WASD** (joystick) and **U/I/O/J/K/L** (action buttons)
@@ -85,25 +85,17 @@ await window.platanusArcadeStorage.set('save-state', { level: 3, lives: 2 });
 await window.platanusArcadeStorage.remove('save-state');
 ```
 
-- `get(key, options?)` returns `{ found: boolean, value: any }`
-- `set(key, value, options?)` stores JSON-compatible data
-- `remove(key, options?)` deletes the stored value
+- `get(key)` returns `{ found: boolean, value: any }`
+- `set(key, value)` stores JSON-compatible data
+- `remove(key)` deletes the stored value
 
 ### Contract
 
 - Keys must match `[A-Za-z0-9._:/-]` and be 1-128 characters long
 - Values must be JSON-compatible and fit within the 64 KiB bridge payload limit
-- Storage is isolated by challenge, game, and version by default
-- Older saves are **not** read automatically by new releases
-- To opt into a previous version explicitly, pass its version slug:
-
-```js
-const previous = await window.platanusArcadeStorage.get('save-state', {
-  version: 'v1-space-balance-fix',
-});
-```
-
-Use that explicit read once, migrate what you need, and then write the new save back with the default current-version namespace. The bridge exists so the iframe can stay on `sandbox="allow-scripts"` and still persist player data.
+- Storage **persists across releases** — saves are scoped to your game, not to a specific version
+- **Heads up:** if you change the shape of your saved data between releases, old values will still be there. Always validate what you read back — malformed or outdated data can crash your game if you assume a fixed structure
+- The bridge exists so the iframe can stay on `sandbox="allow-scripts"` and still persist player data
 
 ---
 
@@ -136,12 +128,12 @@ That's it! 🎉
 
 ### 1. Install Dependencies
 ```bash
-pnpm install
+npm install
 ```
 
 ### 2. Start Development Server
 ```bash
-pnpm dev
+npm run dev
 ```
 This starts a server at `http://localhost:3001` with live restriction checking.
 
